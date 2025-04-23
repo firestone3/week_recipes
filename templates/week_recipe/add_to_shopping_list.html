@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}買い物リストに追加{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h1 class="text-2xl font-bold mb-6 text-orange-600">不足食材を買い物リストに追加</h1>
+    
+    <div class="mb-6">
+        <h2 class="text-xl font-bold">{{ recipe.title }}</h2>
+        {% if recipe.image_url %}
+            <img src="{{ recipe.image_url }}" alt="{{ recipe.title }}" class="w-full h-48 object-cover rounded my-3">
+        {% endif %}
+    </div>
+    
+    {% if missing_ingredients %}
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                <p class="font-medium">冷蔵庫に不足している食材</p>
+                <p class="text-sm text-gray-600 mt-1">チェックした食材が買い物リストに追加されます</p>
+            </div>
+            
+            <div class="space-y-2">
+                {% for ingredient in missing_ingredients %}
+                    <div class="flex items-start p-3 border rounded-lg hover:bg-gray-50">
+                        <input type="checkbox" id="ingredient_{{ forloop.counter }}" name="ingredients" value="{{ ingredient }}" class="mt-1 mr-3" checked>
+                        <label for="ingredient_{{ forloop.counter }}" class="cursor-pointer w-full">
+                            <span class="font-medium block">{{ ingredient }}</span>
+                        </label>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div class="flex justify-between pt-4">
+                <a href="javascript:history.back()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">戻る</a>
+                <button type="submit" class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition">買い物リストに追加</button>
+            </div>
+        </form>
+    {% else %}
+        <div class="text-center py-8 bg-gray-50 rounded-lg">
+            <p class="text-gray-600">このレシピに必要な食材はすべて冷蔵庫にあります。</p>
+            <div class="mt-6">
+                <a href="javascript:history.back()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">戻る</a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}買い物リスト{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h1 class="text-2xl font-bold mb-6 text-orange-600">買い物リスト</h1>
+    
+    <div class="mb-4 flex justify-between items-center">
+        <div>
+            <h2 class="text-xl font-medium">購入が必要な食材</h2>
+        </div>
+        <div>
+            <a href="{% url 'select_ingredients' %}" class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition">
+                新しいレシピを検索
+            </a>
+        </div>
+    </div>
+    
+    {% if unpurchased_items %}
+        <div class="mb-8">
+            <ul class="divide-y divide-gray-200">
+                {% for item in unpurchased_items %}
+                    <li class="py-3 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="item_{{ item.id }}" data-id="{{ item.id }}" class="toggle-item mr-3 h-5 w-5">
+                            <div>
+                                <h3 class="font-medium">{{ item.name }}</h3>
+                                <p class="text-sm text-gray-600">{{ item.quantity }}</p>
+                                {% if item.recipe %}
+                                    <p class="text-xs text-gray-500">レシピ: {{ item.recipe.title }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <button data-id="{{ item.id }}" class="delete-item text-red-500 hover:text-red-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% else %}
+        <div class="text-center py-8 bg-gray-50 rounded-lg mb-8">
+            <p class="text-gray-600">現在、購入が必要な食材はありません。</p>
+        </div>
+    {% endif %}
+    
+    {% if purchased_items %}
+        <h2 class="text-xl font-medium mb-4">購入済みの食材</h2>
+        <div class="bg-gray-50 rounded-lg p-4">
+            <ul class="divide-y divide-gray-200">
+                {% for item in purchased_items %}
+                    <li class="py-3 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="item_{{ item.id }}" data-id="{{ item.id }}" class="toggle-item mr-3 h-5 w-5" checked>
+                            <div>
+                                <h3 class="font-medium line-through text-gray-500">{{ item.name }}</h3>
+                                <p class="text-sm text-gray-400">{{ item.quantity }}</p>
+                            </div>
+                        </div>
+                        <button data-id="{{ item.id }}" class="delete-item text-red-500 hover:text-red-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    
+    <div class="mt-8 flex justify-between">
+        <a href="{% url 'index' %}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">ホームに戻る</a>
+        <a href="{% url 'weekly_menu' %}" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition">献立表に戻る</a>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // チェックボックスの状態変更処理
+        const toggleItems = document.querySelectorAll('.toggle-item');
+        toggleItems.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const itemId = this.getAttribute('data-id');
+                
+                // Ajaxリクエストでチェック状態を更新
+                fetch(`/toggle-shopping-item/${itemId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // ページをリロードして状態を更新
+                        window.location.reload();
+                    }
+                });
+            });
+        });
+        
+        // 削除ボタンの処理
+        const deleteButtons = document.querySelectorAll('.delete-item');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const itemId = this.getAttribute('data-id');
+                
+                if (confirm('この項目を削除してもよろしいですか？')) {
+                    // Ajaxリクエストで削除
+                    fetch(`/delete-shopping-item/${itemId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            // ページをリロードして状態を更新
+                            window.location.reload();
+                        }
+                    });
+                }
+            });
+        });
+        
+        // CSRFトークン取得用関数
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+{% endblock %}

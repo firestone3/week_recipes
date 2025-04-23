@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}週間献立表{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h1 class="text-2xl font-bold mb-2 text-orange-600">週間献立表</h1>
+    <p class="text-gray-600 mb-6">{{ week_of|date:"Y年m月d日" }}からの週</p>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for day in weekdays %}
+            <div class="border rounded-lg overflow-hidden shadow-sm">
+                <div class="bg-gray-50 p-3 border-b">
+                    <h2 class="font-bold">{{ day.name }}</h2>
+                    <p class="text-sm text-gray-600">{{ day.date|date:"m/d" }}</p>
+                </div>
+                
+                {% if day.recipe %}
+                    <div class="p-4">
+                        {% if day.recipe.image_url %}
+                            <a href="{% url 'recipe_detail' day.recipe.id %}">
+                                <img src="{{ day.recipe.image_url }}" alt="{{ day.recipe.title }}" class="w-full h-48 object-cover rounded mb-3">
+                            </a>
+                        {% endif %}
+                        
+                        <h3 class="font-medium text-lg mb-2">
+                            <a href="{% url 'recipe_detail' day.recipe.id %}" class="hover:text-orange-600">
+                                {{ day.recipe.title }}
+                            </a>
+                        </h3>
+                        
+                        {% if day.recipe.ingredients %}
+                            <div class="mt-3">
+                                <p class="text-sm font-medium text-gray-700">材料:</p>
+                                <ul class="mt-1 text-sm text-gray-600 space-y-1">
+                                    {% for ingredient in day.recipe.ingredients.split(',') %}
+                                        {% if forloop.counter <= 5 %}
+                                            <li>{{ ingredient }}</li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if day.recipe.ingredients.split(',')|length > 5 %}
+                                        <li>...</li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mt-4 flex justify-between">
+                            <a href="{% url 'add_to_shopping_list' day.recipe.id %}" class="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition">買い物リストに追加</a>
+                            <a href="{% url 'recipe_detail' day.recipe.id %}" class="px-3 py-1 bg-orange-500 text-white text-sm rounded hover:bg-orange-600 transition">詳細を見る</a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="p-4 flex items-center justify-center min-h-48 text-gray-500">
+                        <p>この日のレシピはまだ設定されていません</p>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+    
+    <div class="mt-8 flex justify-between">
+        <a href="{% url 'index' %}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">ホームに戻る</a>
+        <a href="{% url 'select_ingredients' %}" class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition">新しいレシピを検索</a>
+    </div>
+    
+    <div class="mt-6 bg-orange-50 p-4 rounded-lg">
+        <h3 class="font-medium text-lg mb-2">今週の買い物リスト</h3>
+        <a href="{% url 'shopping_list' %}" class="inline-block px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition mt-2">買い物リストを見る</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}レシピを検索中{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h1 class="text-2xl font-bold mb-6 text-orange-600">レシピを検索中</h1>
+    
+    <div class="text-center py-6">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-orange-500 mx-auto mb-4"></div>
+        <p class="text-lg">選択した食材で楽天レシピを検索しています...</p>
+        
+        {% if ingredient_names %}
+            <div class="mt-6">
+                <p class="font-medium">検索に使用している食材:</p>
+                <ul class="mt-2 inline-flex flex-wrap gap-2 justify-center">
+                    {% for name in ingredient_names %}
+                        <li class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full">{{ name }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="flex justify-center pt-4">
+        <a href="{% url 'select_ingredients' %}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">食材選択に戻る</a>
+    </div>
+</div>
+
+<script>
+    // 自動的にレシピ提案ページにリダイレクト
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            window.location.href = "{% url 'recipe_suggestions' %}";
+        }, 2000);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}週間献立を作成{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h1 class="text-2xl font-bold mb-6 text-orange-600">週間献立を作成</h1>
+    
+    <div class="mb-8 bg-gray-50 p-4 rounded-lg">
+        <p class="font-medium">保存したレシピをドラッグして曜日に割り当ててください</p>
+        <p class="text-sm text-gray-600 mt-1">各レシピをドラッグして、献立を作成したい曜日にドロップします。</p>
+    </div>
+    
+    <div class="flex flex-col lg:flex-row gap-6">
+        <div id="saved-recipes" class="lg:w-1/3 bg-gray-50 p-4 rounded-lg">
+            <h2 class="text-lg font-medium mb-4">保存したレシピ</h2>
+            <div id="recipe-list" class="space-y-3">
+                <!-- JavaScriptで保存済みレシピを表示 -->
+            </div>
+        </div>
+        
+        <div class="lg:w-2/3 bg-gray-50 p-4 rounded-lg">
+            <h2 class="text-lg font-medium mb-4">週間献立表</h2>
+            
+            <form id="weekly-menu-form" method="post" action="{% url 'save_weekly_menu' %}">
+                {% csrf_token %}
+                <input type="hidden" name="recipes_data" id="recipes-data" value="">
+                
+                <div class="grid gap-4">
+                    {% for day_num, day_name in weekdays %}
+                    <div class="weekday-slot border rounded-lg bg-white p-4" data-day="{{ day_num }}">
+                        <h3 class="font-medium text-gray-800">{{ day_name }}</h3>
+                        <div class="recipe-drop-area min-h-24 mt-2 border border-dashed border-gray-300 rounded-lg p-3" data-day="{{ day_num }}">
+                            <p class="text-gray-500 text-center">ここにレシピをドロップ</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="mt-6 flex justify-between">
+                    <a href="{% url 'recipe_suggestions' %}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">レシピ提案に戻る</a>
+                    <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition">献立を保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 保存済みレシピを取得して表示
+        const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
+        const recipeList = document.getElementById('recipe-list');
+        const weekdaySlots = document.querySelectorAll('.recipe-drop-area');
+        
+        // 保存データのための変数
+        let assignedRecipes = {};
+        
+        // 保存済みレシピを表示
+        function renderSavedRecipes() {
+            recipeList.innerHTML = '';
+            
+            if (savedRecipes.length === 0) {
+                recipeList.innerHTML = '<p class="text-gray-500 text-center">保存したレシピがありません</p>';
+                return;
+            }
+            
+            savedRecipes.forEach(recipe => {
+                const recipeItem = document.createElement('div');
+                recipeItem.className = 'recipe-item border rounded-lg bg-white p-3 cursor-move';
+                recipeItem.setAttribute('draggable', 'true');
+                recipeItem.setAttribute('data-recipe-id', recipe.recipeId);
+                
+                recipeItem.innerHTML = `
+                    <div class="flex items-start">
+                        <div class="w-16 h-16 flex-shrink-0 mr-3">
+                            ${recipe.recipeImage ? 
+                                `<img src="${recipe.recipeImage}" alt="${recipe.recipeTitle}" class="w-full h-full object-cover rounded">` : 
+                                `<div class="w-full h-full bg-gray-200 flex items-center justify-center rounded"><span class="text-xs text-gray-500">画像なし</span></div>`
+                            }
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-sm">${recipe.recipeTitle}</h4>
+                        </div>
+                    </div>
+                `;
+                
+                // ドラッグアンドドロップの設定
+                recipeItem.addEventListener('dragstart', function(e) {
+                    e.dataTransfer.setData('text/plain', recipe.recipeId);
+                    e.dataTransfer.effectAllowed = 'copy';
+                    this.classList.add('dragging');
+                });
+                
+                recipeItem.addEventListener('dragend', function() {
+                    this.classList.remove('dragging');
+                });
+                
+                recipeList.appendChild(recipeItem);
+            });
+        }
+        
+        // ドロップエリアの設定
+        weekdaySlots.forEach(slot => {
+            slot.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('bg-gray-100');
+            });
+            
+            slot.addEventListener('dragleave', function() {
+                this.classList.remove('bg-gray-100');
+            });
+            
+            slot.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('bg-gray-100');
+                
+                const recipeId = e.dataTransfer.getData('text/plain');
+                const recipe = savedRecipes.find(r => r.recipeId === recipeId);
+                
+                if (recipe) {
+                    const day = this.getAttribute('data-day');
+                    
+                    // ドロップエリアの内容を更新
+                    this.innerHTML = `
+                        <div class="flex items-start">
+                            <div class="w-12 h-12 flex-shrink-0 mr-2">
+                                ${recipe.recipeImage ? 
+                                    `<img src="${recipe.recipeImage}" alt="${recipe.recipeTitle}" class="w-full h-full object-cover rounded">` : 
+                                    `<div class="w-full h-full bg-gray-200 flex items-center justify-center rounded"><span class="text-xs text-gray-500">画像なし</span></div>`
+                                }
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-sm">${recipe.recipeTitle}</h4>
+                                <button type="button" class="remove-recipe text-xs text-red-500 mt-1">削除</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // 削除ボタンの設定
+                    const removeButton = this.querySelector('.remove-recipe');
+                    if (removeButton) {
+                        removeButton.addEventListener('click', function() {
+                            slot.innerHTML = '<p class="text-gray-500 text-center">ここにレシピをドロップ</p>';
+                            delete assignedRecipes[day];
+                            updateFormData();
+                        });
+                    }
+                    
+                    // 割り当てデータを更新
+                    assignedRecipes[day] = {
+                        recipeId: recipe.recipeId,
+                        title: recipe.recipeTitle,
+                        imageUrl: recipe.recipeImage,
+                        recipeUrl: recipe.recipeUrl,
+                        ingredients: recipe.recipeIngredients
+                    };
+                    
+                    updateFormData();
+                }
+            });
+        });
+        
+        // フォームデータを更新
+        function updateFormData() {
+            const recipesDataInput = document.getElementById('recipes-data');
+            recipesDataInput.value = JSON.stringify(assignedRecipes);
+        }
+        
+        // 初期表示
+        renderSavedRecipes();
+    });
+</script>
+{% endblock %}

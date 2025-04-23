@@ -1,0 +1,13 @@
+asgiref==3.8.1
+Django==4.2.11
+django-browser-reload==1.18.0
+django-tailwind==3.8.0
+python-dotenv==1.0.1
+requests==2.32.3
+sqlparse==0.5.3
+whitenoise==6.9.0
+
+# 開発用パッケージ
+# これらは後でrequirements-dev.txtに移動することを推奨
+Jinja2==3.1.6
+MarkupSafe==3.0.2

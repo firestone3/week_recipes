@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}レシピ提案{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h1 class="text-2xl font-bold mb-6 text-orange-600">おすすめのレシピ</h1>
+    
+    <div class="mb-6">
+        <p class="font-medium">使用食材:</p>
+        <div class="mt-2 flex flex-wrap gap-2">
+            {% for name in ingredient_names %}
+                <span class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full">{{ name }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    
+    {% if recipes %}
+        <div class="mb-4 flex justify-between items-center">
+            <h2 class="text-xl font-medium">検索結果</h2>
+            <a href="{% url 'assign_recipes' %}" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition">
+                週間献立に割り当てる
+            </a>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for recipe in recipes %}
+                <div class="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition">
+                    {% if recipe.foodImageUrl %}
+                        <img src="{{ recipe.foodImageUrl }}" alt="{{ recipe.recipeTitle }}" class="w-full h-48 object-cover">
+                    {% else %}
+                        <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+                            <span class="text-gray-500">画像なし</span>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="p-4">
+                        <h3 class="font-bold text-lg mb-2">{{ recipe.recipeTitle }}</h3>
+                        
+                        {% if recipe.recipeMaterial %}
+                            <div class="mt-3">
+                                <p class="text-sm font-medium text-gray-700">材料:</p>
+                                <ul class="mt-1 text-sm text-gray-600 space-y-1">
+                                    {% for material in recipe.recipeMaterial|slice:":5" %}
+                                        <li>{{ material }}</li>
+                                    {% endfor %}
+                                    {% if recipe.recipeMaterial|length > 5 %}
+                                        <li>...</li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mt-4 flex justify-between items-center">
+                            <span class="text-sm text-gray-500">{{ recipe.shop|default:"楽天レシピ" }}</span>
+                            <div class="flex space-x-2">
+                                <a href="{{ recipe.recipeUrl }}" target="_blank" class="px-3 py-1 bg-orange-500 text-white text-sm rounded hover:bg-orange-600 transition">詳細を見る</a>
+                                <button type="button" data-recipe-id="{{ recipe.recipeId }}" data-recipe-title="{{ recipe.recipeTitle }}" data-recipe-url="{{ recipe.recipeUrl }}" data-recipe-image="{{ recipe.foodImageUrl }}" data-recipe-ingredients="{{ recipe.recipeMaterial|join:',' }}" class="save-recipe px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition">保存</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-8 bg-gray-50 rounded-lg">
+            <p class="text-gray-600">選択した食材に一致するレシピが見つかりませんでした。</p>
+            <p class="text-gray-600 mt-2">別の食材を選択してみてください。</p>
+        </div>
+    {% endif %}
+    
+    <div class="flex justify-between pt-6">
+        <a href="{% url 'select_ingredients' %}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">食材を選び直す</a>
+        <a href="{% url 'index' %}" class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition">ホームに戻る</a>
+    </div>
+</div>
+
+{% if recipes %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const saveButtons = document.querySelectorAll('.save-recipe');
+        
+        saveButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const recipeId = this.getAttribute('data-recipe-id');
+                const recipeTitle = this.getAttribute('data-recipe-title');
+                const recipeUrl = this.getAttribute('data-recipe-url');
+                const recipeImage = this.getAttribute('data-recipe-image');
+                const recipeIngredients = this.getAttribute('data-recipe-ingredients');
+                
+                // レシピをローカルストレージに保存
+                const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
+                
+                // 既に保存されているか確認
+                const exists = savedRecipes.some(recipe => recipe.recipeId === recipeId);
+                
+                if (!exists) {
+                    savedRecipes.push({
+                        recipeId,
+                        recipeTitle,
+                        recipeUrl,
+                        recipeImage,
+                        recipeIngredients
+                    });
+                    
+                    localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
+                    alert(`「${recipeTitle}」を保存しました！`);
+                } else {
+                    alert(`「${recipeTitle}」は既に保存されています。`);
+                }
+            });
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

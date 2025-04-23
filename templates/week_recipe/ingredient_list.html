@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-2xl font-bold py-4 text-gray-500">食材一覧</div>
+<table>
+    <thead>
+        <tr>
+            <th>食材名</th>
+            <th>数量</th>
+            <th>購入日</th>
+            <th>賞味期限</th>
+            <th>保存方法</th>
+            <th>メモ</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ingredient in ingredients %}
+        <tr>
+            <td>{{ ingredient.name }}</td>
+            <td>{{ ingredient.quantity }}</td>
+            <td>{{ ingredient.purchase_date }}</td>
+            <td>{{ ingredient.expiration_date }}</td>
+            <td>{{ ingredient.storage_method }}</td>
+            <td>{{ ingredient.memo }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a class="p-4 bg-cyan-500 hover: bg-cyan-900 text-white" href="{% url 'add_ingredient' %}">食材を追加</a>
+{% endblock %}
