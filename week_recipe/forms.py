@@ -1,5 +1,5 @@
 from django import forms
-from django.forms.widgets import TextInput, NumberInput, DateInput, Textarea
+from django.forms.widgets import TextInput, NumberInput, DateInput, Textarea, Select
 from .models import Ingredient
 
 class IngredientForm(forms.ModelForm):
@@ -20,5 +20,5 @@ class IngredientForm(forms.ModelForm):
             'purchase_date': DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'expiration_date': DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'memo': Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': '例: 料理用'}),
-            'storage_method': TextInput(attrs={'class': 'form-control', 'placeholder': '例: 冷蔵庫'}),
+            'storage_method': Select(attrs={'class': 'form-control'}),
         }

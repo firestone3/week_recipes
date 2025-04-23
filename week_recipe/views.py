@@ -35,6 +35,37 @@ def add_ingredient(request):
         form = IngredientForm()
     return render(request, 'week_recipe/add_ingredient.html', {'form': form})
 
+def edit_ingredient(request, ingredient_id):
+    """食材情報を編集する"""
+    ingredient = get_object_or_404(Ingredient, id=ingredient_id)
+    
+    if request.method == 'POST':
+        form = IngredientForm(request.POST, instance=ingredient)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '食材情報を更新しました')
+            return redirect('ingredient_list')
+    else:
+        form = IngredientForm(instance=ingredient)
+    
+    return render(request, 'week_recipe/edit_ingredient.html', {
+        'form': form,
+        'ingredient': ingredient
+    })
+
+def delete_ingredient(request, ingredient_id):
+    """食材を削除する"""
+    ingredient = get_object_or_404(Ingredient, id=ingredient_id)
+    
+    if request.method == 'POST':
+        ingredient.delete()
+        messages.success(request, f'「{ingredient.name}」を削除しました')
+        return redirect('ingredient_list')
+    
+    return render(request, 'week_recipe/delete_ingredient.html', {
+        'ingredient': ingredient
+    })
+
 def shopping_list(request):
     """買い物リストを表示する画面"""
     # 買い物リストの取得
@@ -237,19 +268,22 @@ def recipe_suggestions(request):
 
 def search_rakuten_recipes(ingredients):
     """楽天レシピAPIを使用して検索する"""
-    # 本番環境ではsettingsから取得するが、開発環境では仮のキー
-    api_key = getattr(settings, 'RAKUTEN_API_KEY', 'YOUR_API_KEY')
+    # 設定ファイルから楽天APIの認証情報を取得
+    api_key = getattr(settings, 'RAKUTEN_API_KEY', '')
+    affiliate_id = getattr(settings, 'RAKUTEN_AFFILIATE_ID', '')
     
-    # 食材名をカンマ区切りの文字列に変換
+    # 食材名をスペース区切りの文字列に変換
     ingredient_query = ' '.join(ingredients)
     
-    # 楽天レシピAPIのエンドポイント
-    url = 'https://app.rakuten.co.jp/services/api/Recipe/CategoryRanking/20170426'
+    # 楽天レシピAPIのエンドポイント (レシピカテゴリ別ランキングAPIではなくレシピ検索APIを使用)
+    url = 'https://app.rakuten.co.jp/services/api/Recipe/CategoryList/20170426'
     
     params = {
         'applicationId': api_key,
-        'categoryId': '10',  # カテゴリID（必要に応じて変更）
+        'affiliateId': affiliate_id,
+        'formatVersion': 2,
         'keyword': ingredient_query,
+        'categoryType': 'large',
         'format': 'json'
     }
     
@@ -257,8 +291,24 @@ def search_rakuten_recipes(ingredients):
         response = requests.get(url, params=params)
         if response.status_code == 200:
             data = response.json()
-            return data.get('result', [])
+            result = []
+            
+            # APIのレスポンス構造に合わせて結果を処理
+            for recipe in data.get('result', []):
+                recipe_info = {
+                    'recipeId': recipe.get('recipeId', ''),
+                    'title': recipe.get('recipeTitle', ''),
+                    'imageUrl': recipe.get('foodImageUrl', ''),
+                    'recipeUrl': recipe.get('recipeUrl', ''),
+                    'ingredients': ', '.join(recipe.get('recipeMaterial', [])),
+                    'indication': recipe.get('recipeIndication', ''),
+                    'cost': recipe.get('recipeCost', '')
+                }
+                result.append(recipe_info)
+            
+            return result
         else:
+            print(f"API Error: {response.status_code} - {response.text}")
             return []
     except Exception as e:
         print(f"Error fetching recipes: {e}")
@@ -310,6 +360,7 @@ def save_weekly_menu(request):
                     image_url=recipe_data.get('imageUrl', ''),
                     recipe_url=recipe_data['recipeUrl'],
                     ingredients=recipe_data.get('ingredients', ''),
+                    description=recipe_data.get('indication', '') + ' | ' + recipe_data.get('cost', '')
                 )
                 recipe.save()
             
@@ -320,6 +371,7 @@ def save_weekly_menu(request):
                 defaults={'recipe': recipe}
             )
         
+        messages.success(request, '週間メニューを保存しました')
         return redirect('weekly_menu')
     
     return redirect('assign_recipes')

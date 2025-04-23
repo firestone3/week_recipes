@@ -8,6 +8,8 @@ urlpatterns = [
     path('<int:recipe_id>/edit/', views.edit, name='edit'),
     path('ingredients/', views.ingredient_list, name='ingredient_list'),
     path('ingredients/add/', views.add_ingredient, name='add_ingredient'),
+    path('ingredients/edit/<int:ingredient_id>/', views.edit_ingredient, name='edit_ingredient'),
+    path('ingredients/delete/<int:ingredient_id>/', views.delete_ingredient, name='delete_ingredient'),
     path('shopping-list/', views.shopping_list, name='shopping_list'),
     
     # レシピ作成の3ステップのURLパターン
