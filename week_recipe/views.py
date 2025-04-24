@@ -10,7 +10,45 @@ import urllib.parse
 from django.contrib import messages
 
 def index(request):
-    return render(request, 'week_recipe/index.html')
+    """トップページの表示"""
+    # 楽天レシピAPIからおすすめレシピを3件取得
+    api_key = getattr(settings, 'RAKUTEN_API_KEY', '')
+    
+    # 楽天レシピカテゴリランキングAPIのエンドポイント
+    url = 'https://app.rakuten.co.jp/services/api/Recipe/CategoryRanking/20170426'
+    
+    params = {
+        'applicationId': api_key,
+        'categoryId': '10', # メインディッシュカテゴリ
+        'format': 'json'
+    }
+    
+    recommended_recipes = []
+    
+    try:
+        response = requests.get(url, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            
+            # 上位3件のレシピを取得
+            for recipe in data.get('result', [])[:3]:
+                recipe_info = {
+                    'recipeId': recipe.get('recipeId', ''),
+                    'recipeTitle': recipe.get('recipeTitle', ''),
+                    'foodImageUrl': recipe.get('foodImageUrl', ''),
+                    'recipeUrl': recipe.get('recipeUrl', ''),
+                    'recipeDescription': recipe.get('recipeDescription', ''),
+                    'nickname': recipe.get('nickname', '')
+                }
+                recommended_recipes.append(recipe_info)
+    except Exception as e:
+        print(f"楽天APIエラー: {e}")
+    
+    context = {
+        'recommended_recipes': recommended_recipes,
+    }
+    
+    return render(request, 'week_recipe/index.html', context)
 
 def detail(request, recipe_id):
     return render(request, 'week_recipe/detail.html', {'recipe_id': recipe_id})

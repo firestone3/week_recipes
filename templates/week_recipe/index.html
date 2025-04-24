@@ -1,7 +1,53 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="text-2xl font-bold text-orange-800 py-4">Welcome to Week Recipe</div>
-<p>あなたが入力または選択した食材を基に１週間分のレシピを提案します。</p>
-<p>新しいレシピを楽しんでください！</p>
+<div class="container mx-auto px-4 py-8">
+    <p class="text-cyan-800 font-normal mb-6">あなたが入力または選択した食材を基に１週間分のレシピを提案します。</p>
+    <p class="text-cyan-800 font-normal mb-8">ぜひ、新しいレシピを楽しんでください！</p>
+    
+    <h2 class="text-xl font-bold text-cyan-800 mb-6">今日のおすすめレシピ</h2>
+    
+    <div class="flex flex-wrap justify-center gap-6 p-2">
+        {% for recipe in recommended_recipes %}
+            <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full m-1" style="width: 340px;">
+                <!-- 画像部分 -->
+                <div class="relative w-1/3 p-8">
+                    {% if recipe.foodImageUrl %}
+                        <img src="{{ recipe.foodImageUrl }}" alt="{{ recipe.recipeTitle }}" 
+                             style="object-fit: cover; object-position: center;"
+                             class="hover:scale-105 transition-transform duration-300 w-full h-full">
+                    {% else %}
+                        <div class="w-full h-full bg-gray-200 flex items-center justify-center">
+                            <span class="text-gray-500">画像なし</span>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- 説明文を画像の直下に配置 -->
+                {% if recipe.recipeDescription %}
+                <div class="p-3 bg-gray-50 border-b">
+                    <p class="text-sm text-gray-600 line-clamp-2">{{ recipe.recipeDescription }}</p>
+                </div>
+                {% endif %}
+                
+                <!-- その他の情報 -->
+                <div class="p-4 flex flex-col flex-grow">
+                    <h3 class="text-lg font-semibold text-cyan-900 mb-3 line-clamp-2 min-h-[3.5rem]">{{ recipe.recipeTitle }}</h3>
+                    
+                    <div class="flex items-center text-sm text-gray-500 mb-3 mt-auto">
+                        <span>投稿者: {{ recipe.nickname }}</span>
+                    </div>
+                    <a href="{{ recipe.recipeUrl }}" target="_blank" rel="noopener noreferrer" 
+                       class="block w-full text-center bg-cyan-600 hover:bg-cyan-700 text-white py-2 px-4 rounded-md transition-colors duration-300">
+                        レシピを見る
+                    </a>
+                </div>
+            </div>
+        {% empty %}
+            <div class="text-center py-8 w-full">
+                <p class="text-gray-500">おすすめレシピを取得できませんでした。</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}
